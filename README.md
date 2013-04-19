@@ -2,7 +2,7 @@ GoogleMapsController
 ====================
 
 Simple works with GoogleMapsAPI v3
-
+<pre>
 1. 
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
 <script type="text/javascript" src="js/google-maps-controller.js"></script>
@@ -31,3 +31,4 @@ $(function()
 
 
 });
+</pre>
