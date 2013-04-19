@@ -2,16 +2,13 @@ GoogleMapsController
 ====================
 
 Simple works with GoogleMapsAPI v3
-
-1. 
 <pre>
-<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
-<script type="text/javascript" src="js/google-maps-controller.js"></script>
-</pre>
+1. 
+http://maps.google.com/maps/api/js?sensor=true"
 
 2.
-<div id="map_canvas"></div>
-<span id="address-my-marker"></span>
+div id="map_canvas"
+span id="address-my-marker"
 
 3.
 $(function()
@@ -37,4 +34,5 @@ $(function()
 
 
 });
+
 </pre>
