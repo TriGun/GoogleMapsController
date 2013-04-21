@@ -1,7 +1,11 @@
 /**
- * Author: trigalex
+ * User: trigalex
  */
 
+/*Object.prototype.log = function()
+{
+    console.log(this);
+}*/
 
 var googleMapsController = (function()
 {
@@ -15,11 +19,13 @@ var googleMapsController = (function()
     var _options;
     var _map;
     var _geocoder;
+    var _geolocation;
 
     /* help */
     var _mapPositionByAddress;
     var _markers;
 
+    /* constructor */
     function googleMapsController(container, width, height)
     {
         this._container = container;
@@ -45,25 +51,22 @@ var googleMapsController = (function()
         this.init();
     };
 
-    /* getContainer */
-    googleMapsController.prototype.getContainer = function()
-    {
-        return this._container;
-    };
-
+    /* init */
     googleMapsController.prototype.init = function()
     {
         $('#' + this._container).css('width', this._width);
         $('#' + this._container).css('height', this._height);
 
         this._map =  new google.maps.Map(document.getElementById(this._container), this._options);
+
+        if(this._markers.length > 0)
+            for(var i in this._markers)
+                this.addMarker(this._markers[i]);
     }
 
     /* addMarkerByMapPosition */
     googleMapsController.prototype.addMarkerByMapPosition = function(position, draggable)
     {
-
-        console.log(this);
 
         var marker = new google.maps.Marker({
             position: position,
@@ -78,7 +81,13 @@ var googleMapsController = (function()
     }
 
     /* addMarker */
-    googleMapsController.prototype.addMarker = function(point, draggable)
+    googleMapsController.prototype.addMarker = function(marker)
+    {
+        return marker.setMap(this._map);
+    }
+
+    /* addMarkerByPoint */
+    googleMapsController.prototype.addMarkerByPoint = function(point, draggable)
     {
         var position =  new google.maps.LatLng(point[0], point[1]);
         return this.addMarkerByMapPosition(position, draggable || false);
@@ -100,6 +109,7 @@ var googleMapsController = (function()
     /* getMapPositionByAddress */
     googleMapsController.prototype.getMapPositionByAddress = function(address, callback, obj)
     {
+        obj = obj || this;
 
         if(this._geocoder == undefined) this._geocoder = new google.maps.Geocoder();
 
@@ -148,13 +158,45 @@ var googleMapsController = (function()
     /* addListenerMarkerDrag */
     googleMapsController.prototype.addListenerMarkerDrag = function(marker, callback)
     {
-        google.maps.event.addListener(marker, 'dragend', callback);
+        //google.maps.event.addListener(marker, 'dragend', callback);
+        this.addMarkerEvent(marker, 'dragend', callback);
     }
 
     /* addListenerMarkerDragAndGetAddress */
     googleMapsController.prototype.addListenerMarkerDragAndGetAddress = function(marker, callback)
     {
         this.addListenerMarkerDrag(marker, function(event){ this.getAddressByMarker(marker, callback) });
+    }
+
+    /* deleteMarker */
+    googleMapsController.prototype.deleteMarker = function(marker)
+    {
+        marker.setMap(null);
+        marker.visible(false);
+    }
+
+    /* getLastMarker */
+    googleMapsController.prototype.getLastMarker = function()
+    {
+        return this._markers[this._markers.length - 1];
+    }
+
+    /* centerToMarker */
+    googleMapsController.prototype.centerToMarker = function(marker)
+    {
+        return this._map.panTo(marker.position);
+    }
+
+    /* addMapEvent */
+    googleMapsController.prototype.addMapEvent = function(event, callback)
+    {
+        google.maps.event.addListener(this._map, event, callback);
+    }
+
+    /* addMarkerEvent */
+    googleMapsController.prototype.addMarkerEvent = function(marker, event, callback)
+    {
+        google.maps.event.addListener(marker, event, callback);
     }
 
     return googleMapsController;
