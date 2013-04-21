@@ -6,7 +6,9 @@
 <body>
     <h1>Google Maps</h1>
     <p>Address: <span id="address-my-marker"></span></p>
-    <div id="map_canvas"></div>
+    <p>Address: <span id="address-my-usa-marker"></span></p>
+    <div id="map_canvas" style="float: left"></div>
+    <div id="map_mini_canvas"></div>
 </body>
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
@@ -17,21 +19,46 @@
 $(function()
 {
     var addresses = [
-    'Украина Донецк Нижнекурганская 5',
-    'Украина Донецк Нижнекурганская 7',
-    'Украина Донецк Нижнекурганская 9',
-    'Украина Донецк Нижнекурганская 21'
+    'Украина Донецк Артема 1',
+    'Украина Донецк Артема 7',
+    'Украина Донецк Артема 9',
+    'Украина Донецк Артема 21'
     ];
 
-    gmap = new googleMapsController('map_canvas', 1000, 400);
+    gmap = new googleMapsController('map_canvas', 600, 400);
 
-    myMarker = gmap.addMarker([48.012, 37.801], true);
+    gmap.addMarkerByAddress('Украина Донецк Нижнекурганская 1   ', true);
+    gmap.addMarkersByAddressArray(addresses, false);
+    gmap.addMarkerByPoint([48.012, 37.801], true);
 
-    gmap.addMarkersByAddressArray(addresses, true);
+    marker = gmap.getLastMarker();
 
-    gmap.addListenerMarkerDrag(myMarker, function(event){ gmap.getAddressByMarker(myMarker, function(result){ $('#address-my-marker').text(result.formatted_address); }); });
-    gmap.addListenerMarkerDrag(myMarker, function(event){ console.log('marker drag'); });
-    //gmap.addListenerMarkerDragAndGetAddress(myMarker, function(result){console.log(result);});
+    gmap.addListenerMarkerDrag(marker, function(event)
+    {
+        gmap.getAddressByMapPosition(event.latLng, function(result)
+        {
+            $('#address-my-marker').text(result.formatted_address);
+        });
+    });
+
+    var new_york;
+    mini_map = new googleMapsController('map_mini_canvas', 600, 400);
+    mini_map.getMapPositionByAddress('New York', function(position)
+    {
+        new_york = mini_map.addMarkerByMapPosition(position);
+        mini_map.centerToMarker(new_york);
+    }, mini_map);
+
+    google.maps.event.addListener(mini_map._map, 'click', function(event)
+    {
+        new_york.setMap(null);
+        new_york = mini_map.addMarkerByMapPosition(event.latLng);
+        mini_map.getAddressByMapPosition(event.latLng, function(result)
+        {
+            $('#address-my-usa-marker').text(result.formatted_address);
+        }
+        ,mini_map)
+    });
 
 });
 </script>
