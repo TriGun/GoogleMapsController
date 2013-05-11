@@ -7,6 +7,24 @@
     console.log(this);
 }*/
 
+function loadScript() {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src = "http://maps.google.com/maps/api/js?sensor=true";
+    console.log(script);
+    //document.body.appendChild(script);
+    $('body').append(script);
+}
+
+
+var point = function(lat, lang)
+{
+    return new google.maps.LatLng(lat, lang);
+}
+
+
+//loadScript();
+
 var googleMapsController = (function()
 {
 
@@ -24,6 +42,7 @@ var googleMapsController = (function()
     /* help */
     var _mapPositionByAddress;
     var _markers;
+    var _info_windows;
 
     /* constructor */
     function googleMapsController(container, width, height)
@@ -33,11 +52,12 @@ var googleMapsController = (function()
         this._height = height || 300;
 
         this._markers = [];
+        this._info_windows = [];
 
         this._options =
         {
             zoom: 12,
-            center: new google.maps.LatLng(48.015883, 37.802850),
+            center: new google.maps.LatLng(0, 0),
             panControl: false,
             zoomControl: false,
             zoomControlOptions: {style: google.maps.ZoomControlStyle.LARGE},
@@ -49,6 +69,11 @@ var googleMapsController = (function()
         };
 
         this.init();
+
+        google.maps.Circle.prototype.contains = function(latLng) {
+            return this.getBounds().contains(latLng) && google.maps.geometry.spherical.computeDistanceBetween(this.getCenter(), latLng) <= this.getRadius();
+        }
+
     };
 
     /* init */
@@ -76,6 +101,8 @@ var googleMapsController = (function()
             animation: google.maps.Animation.DROP
         });
 
+        marker.controller = this;
+
         this._markers.push(marker);
         return marker;
     }
@@ -96,7 +123,10 @@ var googleMapsController = (function()
     /* addMarkerByAddress */
     googleMapsController.prototype.addMarkerByAddress = function(address, draggable)
     {
-        this.getMapPositionByAddress(address, function(position){ this.addMarkerByMapPosition(position, draggable || false); }, this);
+        this.getMapPositionByAddress(address, function(position)
+        {
+            this.addMarkerByMapPosition(position, draggable || false);
+        }, this);
     }
 
     /* addMarkersByAddressArray */
@@ -171,8 +201,10 @@ var googleMapsController = (function()
     /* deleteMarker */
     googleMapsController.prototype.deleteMarker = function(marker)
     {
+        if(marker){
         marker.setMap(null);
-        marker.visible(false);
+      //  marker.visible(false);
+        }
     }
 
     /* getLastMarker */
@@ -187,6 +219,13 @@ var googleMapsController = (function()
         return this._map.panTo(marker.position);
     }
 
+    /* centerToMarker */
+    googleMapsController.prototype.centerToAddress = function(address)
+    {
+        //return this._map.panTo(marker.position);
+        this.getMapPositionByAddress(address, function(position){ this._map.panTo(position); }, this);
+    }
+
     /* addMapEvent */
     googleMapsController.prototype.addMapEvent = function(event, callback)
     {
@@ -197,6 +236,107 @@ var googleMapsController = (function()
     googleMapsController.prototype.addMarkerEvent = function(marker, event, callback)
     {
         google.maps.event.addListener(marker, event, callback);
+    }
+
+    /* getClientPosition W3C */
+    googleMapsController.prototype.getClientPosition = function(callback)
+    {
+
+        if (navigator.geolocation)
+        {
+            var timeoutVal = 10 * 1000 * 1000;
+            obj = this;
+            //console.log(obj);
+            navigator.geolocation.getCurrentPosition(
+                function(position)
+                {
+                    callback.call(obj, position);
+                },
+                function(error)
+                {
+                    console.log('Error' + error);
+                },
+                { enableHighAccuracy: true, timeout: timeoutVal, maximumAge: 0 }
+            );
+        }
+        else
+        {
+            console.log("Geolocation не поддерживается данным браузером");
+        }
+
+    }
+
+    /* parceAddressCoponents */
+    googleMapsController.prototype.parceAddressCoponents = function(addressComponent)
+    {
+        result = {};
+
+        for(var i in addressComponent)
+            if(typeof(addressComponent[i]) == 'object')
+            {
+                if(addressComponent[i].types[0] == 'street_number') result.house = addressComponent[i].long_name;
+                if(addressComponent[i].types[0] == 'route') result.street = addressComponent[i].long_name;
+                if(addressComponent[i].types[0] == 'sublocality') result.district = addressComponent[i].long_name;
+                if(addressComponent[i].types[0] == 'locality') result.city = addressComponent[i].long_name;
+                if(addressComponent[i].types[0] == 'country') result.country = addressComponent[i].long_name;
+
+            }
+
+        return result;
+    }
+
+    /* addCircle */
+    googleMapsController.prototype.addCircle = function(position, radius)
+    {
+        var circle = new google.maps.Circle({
+            map: this._map,
+            radius: radius,    // 10 miles in metres
+            fillColor: '#AA0000',
+            'center': position
+        });
+
+        return circle;
+    }
+
+    /* addInfoWindow */
+    googleMapsController.prototype.addInfoWindowToMarker = function(marker, content)
+    {
+        var contentString = '<div id="content">' + content + '</div>';
+
+        var infowindow = new google.maps.InfoWindow({
+            content: contentString
+        });
+
+        this._info_windows.push(infowindow);
+
+        marker.infowindow = infowindow;
+
+        google.maps.event.addListener(marker, 'click', function() {
+
+            for(var i in this.controller._info_windows)
+                this.controller._info_windows[i].close();
+
+            this.infowindow.open(this.map, this);
+        });
+
+        return infowindow;
+    }
+
+
+    /* zoomToFitMarkers */
+    googleMapsController.prototype.zoomToFitMarkers = function()
+    {
+        var LatLngList = new Array ();
+
+        for(var i in this._markers)
+            LatLngList.push(this._markers[i].position);
+
+        var bounds = new google.maps.LatLngBounds();
+
+        for (var i = 0, LtLgLen = LatLngList.length; i < LtLgLen; i++) {
+            bounds.extend(LatLngList[i]);
+        }
+        this._map.fitBounds(bounds);
     }
 
     return googleMapsController;
