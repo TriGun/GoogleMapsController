@@ -13,7 +13,7 @@
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
-<script type="text/javascript" src="js/google-maps-controller.js"></script>
+<script type="text/javascript" src="google-maps-controller.js"></script>
 
 <script type="text/javascript">
 $(function()
@@ -27,19 +27,40 @@ $(function()
 
     gmap = new googleMapsController('map_canvas', 600, 400);
 
-    gmap.addMarkerByAddress('Украина Донецк Нижнекурганская 1   ', true);
-    gmap.addMarkersByAddressArray(addresses, false);
-    gmap.addMarkerByPoint([48.012, 37.801], true);
+    gmap._options.zoom = 8;
+    gmap.init();
 
-    marker = gmap.getLastMarker();
-
-    gmap.addListenerMarkerDrag(marker, function(event)
+    gmap.getMapPositionByAddress('Украина Киев', function(position)
     {
-        gmap.getAddressByMapPosition(event.latLng, function(result)
-        {
-            $('#address-my-marker').text(result.formatted_address);
-        });
+        var m = gmap.addMarkerByMapPosition(position);
+        console.log(gmap);
+        gmap.centerToMarker(m);
+
     });
+
+    gmap.getClientPosition(function(position)
+    {
+        console.log('position');
+    }, function(error)
+    {
+        console.log('ERRRRRRRRRRRRRRRRRRRRr');
+    });
+
+    /*
+        gmap.addMarkerByAddress('Украина Донецк Нижнекурганская 1   ', true);
+        gmap.addMarkersByAddressArray(addresses, false);
+        gmap.addMarkerByPoint([48.012, 37.801], true);
+
+        marker = gmap.getLastMarker();
+
+        gmap.addListenerMarkerDrag(marker, function(event)
+        {
+            gmap.getAddressByMapPosition(event.latLng, function(result)
+            {
+                $('#address-my-marker').text(result.formatted_address);
+            });
+        });
+    */
 
     var new_york;
     mini_map = new googleMapsController('map_mini_canvas', 600, 400);

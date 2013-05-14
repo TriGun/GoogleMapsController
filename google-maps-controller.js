@@ -239,7 +239,7 @@ var googleMapsController = (function()
     }
 
     /* getClientPosition W3C */
-    googleMapsController.prototype.getClientPosition = function(callback)
+    googleMapsController.prototype.getClientPosition = function(callback, error_callback)
     {
 
         if (navigator.geolocation)
@@ -255,6 +255,7 @@ var googleMapsController = (function()
                 function(error)
                 {
                     console.log('Error' + error);
+                    if(error_callback) error_callback.call(obj, error);
                 },
                 { enableHighAccuracy: true, timeout: timeoutVal, maximumAge: 0 }
             );
